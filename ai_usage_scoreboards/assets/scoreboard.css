@@ -1,0 +1,7 @@
+/* Keep CTFd's native bracket selector available while a long table scrolls. */
+#scoreboard > .col-md-12.py-3 {
+  position: sticky;
+  top: 56px;
+  z-index: 10;
+  background: var(--bs-body-bg);
+}
