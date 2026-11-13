@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from CTFd.cache import clear_standings, clear_team_session
 from CTFd.models import Brackets, TeamFieldEntries, TeamFields, Teams, db
 from CTFd.plugins import register_plugin_script, register_plugin_stylesheet
+from CTFd.utils.user import is_admin
 
 FIELD = "ai_usage_state"
 STATES = {
@@ -77,10 +78,15 @@ def registration_script():
 
 def load(app):
     # Existing field/brackets are reused. No public request provisions data.
-    if TeamFields.query.filter_by(name=FIELD).first() is None:
-        db.session.add(TeamFields(name=FIELD, field_type="text", required=True,
-                                  public=True, editable=True,
-                                  description="Select how your team uses AI"))
+    field = TeamFields.query.filter_by(name=FIELD).first()
+    if field is None:
+        field = TeamFields(name=FIELD, field_type="text", required=True,
+                           public=True, editable=False,
+                           description="Select how your team uses AI")
+        db.session.add(field)
+    else:
+        # Upgrade existing installations as well as provisioning new ones.
+        field.editable = False
     for name in dict.fromkeys(STATES.values()):
         if Brackets.query.filter_by(type="teams", name=name).first() is None:
             db.session.add(Brackets(type="teams", name=name,
@@ -111,6 +117,8 @@ def load(app):
                 abort(400, description="Expected custom field objects")
             values = [e.get("value") for e in entries
                       if str(e.get("field_id")) == str(field_id)]
+            if request.method == "PATCH" and values and not is_admin():
+                abort(403, description="AI usage can only be selected during team registration")
         if len(values) > 1 or any(not isinstance(v, str) or v not in STATES for v in values):
             abort(400, description="Select exactly one valid AI usage state")
         api_creation = request.path.rstrip("/") == "/api/v1/teams" and request.method == "POST"

@@ -13,8 +13,11 @@ template, graph, and JavaScript remain unchanged.
 | No AI | No AI |
 | Fully Automized | Fully Automized |
 
-The required `ai_usage_state` custom team field appears during team creation
-and can be edited by the team captain. The existing scoreboard filter bar
+The required `ai_usage_state` custom team field is selectable only during team
+creation. Teams cannot change it afterward, including through the API.
+Administrators can still correct a declaration through CTFd's admin API.
+Existing installations automatically mark this field non-editable when the
+plugin loads. The existing scoreboard filter bar
 is made sticky for long leaderboards. `/ai-scoreboards` redirects to `/scoreboard`.
 
 ## Installation
@@ -38,8 +41,8 @@ can read the files and traverse the directory.
 
 Install before registration opens where possible. Existing teams need a valid
 `ai_usage_state` declaration. Loading this plugin does not automatically infer
-declarations or migrate every existing team. Saving a declaration through the
-team settings/API synchronizes its native bracket.
+declarations or migrate every existing team. An administrator must set any
+missing declaration through the admin API, which synchronizes its native bracket.
 
 This plugin uses team brackets for AI categories. An event that already uses
 brackets for another classification needs a separate integration design.
@@ -62,6 +65,17 @@ non-captain rejection, CSRF rejection, malformed payloads, duplicate values,
 invalid ORM values, rollback behavior, and creation with a forged bracket.
 These checks are not an independent penetration test or a compatibility
 guarantee for other CTFd versions.
+
+The registration-only regression test is in `tests/test_registration_only.py`.
+It creates and removes temporary users and teams in a configured CTFd
+environment. It covers all four registration values, absence of the field in
+team settings, rejection of captain API declaration writes, preservation of
+the declaration and bracket, and unrelated profile edits. Run it from the
+repository root with your CTFd Compose file:
+
+```sh
+docker compose -f /path/to/docker-compose.yml exec -T -e PYTHONPATH=/opt/CTFd ctfd python - < tests/test_registration_only.py
+```
 
 Bulk SQL updates bypass SQLAlchemy ORM listeners. Maintenance scripts must
 preserve the declaration/bracket relationship and invalidate caches themselves.

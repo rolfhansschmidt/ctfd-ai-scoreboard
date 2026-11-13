@@ -1,5 +1,6 @@
 // Progressive enhancement recommended by CTFd's custom field dropdown guide.
 document.addEventListener("DOMContentLoaded", () => {
+  if (!window.location.pathname.replace(/\/$/, "").endsWith("/teams/new")) return;
   const input = document.getElementById(`fields[${aiUsageConfig.field}]`);
   if (!input || input.tagName !== "INPUT") return;
   const select = document.createElement("select");
